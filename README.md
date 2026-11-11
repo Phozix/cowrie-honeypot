@@ -56,6 +56,7 @@ For the honeypot this is fine (the port is meant to be public), but for any serv
 | `host-hardening/00-hardening.conf` | sshd drop-in config (key-only, no root) |
 | `host-hardening/ufw-rules.sh` | Host firewall rules |
 | `queries.md` | `jq` queries to analyse `cowrie.json` |
+| `analyze.py` | Python report: top IPs, credentials, commands, downloads (standard library only) |
 
 ---
 
@@ -82,7 +83,11 @@ Logs are stored in the `cowrie-var` volume:
 sudo tail -n 3 /var/lib/docker/volumes/cowrie_cowrie-var/_data/log/cowrie/cowrie.json | jq
 ```
 
-See [`queries.md`](queries.md) for more analysis queries.
+See [`queries.md`](queries.md) for more analysis queries, or run the Python report:
+
+```bash
+sudo python3 analyze.py /var/lib/docker/volumes/cowrie_cowrie-var/_data/log/cowrie/cowrie.json --top 10
+```
 
 ---
 
@@ -103,7 +108,8 @@ See [`queries.md`](queries.md) for more analysis queries.
 - [x] Local lab: VM, Docker, Cowrie, persistent JSON logs
 - [x] Container hardening
 - [x] Host hardening (SSH keys, ufw)
-- [ ] Python analysis tool (top credentials, source countries, commands, downloads) with charts
+- [x] Python analysis tool: top IPs, credentials, commands, downloads
+- [ ] Analysis: source countries (GeoIP) and charts
 - [ ] Cloud deployment (Azure for Students) with Cowrie on port 22 and admin SSH on another port
 - [ ] Infrastructure as Code with Terraform
 - [ ] Alerting with Wazuh
