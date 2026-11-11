@@ -1,0 +1,26 @@
+services:
+  cowrie:
+    image: cowrie/cowrie:latest
+    container_name: cowrie
+    restart: unless-stopped
+    ports:
+      - "2222:2222"
+    volumes:
+      - cowrie-var:/cowrie/cowrie-git/var   # logs, TTY sessions, attacker downloads
+      - cowrie-etc:/cowrie/cowrie-git/etc   # configuration
+    environment:
+      - COWRIE_HONEYPOT_HOSTNAME=web-prod-01   # replace the default "svr04" fingerprint
+    # --- container hardening (least privilege) ---
+    read_only: true                 # immutable root filesystem
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL                         # drop every Linux capability
+    security_opt:
+      - no-new-privileges:true      # block privilege escalation (setuid, etc.)
+    mem_limit: 512m                 # cap memory usage
+    pids_limit: 100                 # prevent fork bombs
+
+volumes:
+  cowrie-var:
+  cowrie-etc:

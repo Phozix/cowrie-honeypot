@@ -1,0 +1,11 @@
+# Never commit honeypot data: it contains attacker IPs, credentials and possibly malware samples
+var/
+log/
+*.json
+downloads/
+tty/
+
+# Private keys
+id_*
+*.pem
+*.key
