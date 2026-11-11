@@ -56,7 +56,7 @@ For the honeypot this is fine (the port is meant to be public), but for any serv
 | `host-hardening/00-hardening.conf` | sshd drop-in config (key-only, no root) |
 | `host-hardening/ufw-rules.sh` | Host firewall rules |
 | `queries.md` | `jq` queries to analyse `cowrie.json` |
-| `analyze.py` | Python report: top IPs, credentials, commands, downloads (standard library only) |
+| `analyze.py` | Python report: top IPs, countries, credentials, commands, downloads + PNG charts |
 
 ---
 
@@ -83,11 +83,40 @@ Logs are stored in the `cowrie-var` volume:
 sudo tail -n 3 /var/lib/docker/volumes/cowrie_cowrie-var/_data/log/cowrie/cowrie.json | jq
 ```
 
-See [`queries.md`](queries.md) for more analysis queries, or run the Python report:
+See [`queries.md`](queries.md) for more analysis queries.
+
+---
+
+## Analysis report (`analyze.py`)
+
+The basic report needs nothing but Python 3:
 
 ```bash
-sudo python3 analyze.py /var/lib/docker/volumes/cowrie_cowrie-var/_data/log/cowrie/cowrie.json --top 10
+LOG=/var/lib/docker/volumes/cowrie_cowrie-var/_data/log/cowrie/cowrie.json
+sudo python3 analyze.py $LOG --top 10
 ```
+
+It prints sessions, unique IPs, login successes/failures and the top IPs, usernames, passwords, combos, commands and downloaded URLs.
+
+### Countries and charts (optional)
+
+```bash
+# 1. Libraries (Ubuntu packages, no pip needed)
+sudo apt install -y python3-maxminddb python3-matplotlib
+
+# 2. Free offline country database from DB-IP (updated monthly)
+wget https://download.db-ip.com/free/dbip-country-lite-$(date +%Y-%m).mmdb.gz
+gunzip dbip-country-lite-*.mmdb.gz
+
+# 3. Full report + PNG charts in ./charts
+sudo python3 analyze.py $LOG --geoip dbip-country-lite-*.mmdb --charts charts
+```
+
+Charts produced: connections by country, top passwords, top usernames, top commands, connections per day.
+
+The geolocation runs **offline**: attacker IPs are never sent to a third-party API. Private addresses (Docker, the VM, the admin laptop) are reported as `Private network`.
+
+IP geolocation by [DB-IP](https://db-ip.com), licensed under CC BY 4.0.
 
 ---
 
@@ -109,7 +138,7 @@ sudo python3 analyze.py /var/lib/docker/volumes/cowrie_cowrie-var/_data/log/cowr
 - [x] Container hardening
 - [x] Host hardening (SSH keys, ufw)
 - [x] Python analysis tool: top IPs, credentials, commands, downloads
-- [ ] Analysis: source countries (GeoIP) and charts
+- [x] Analysis: source countries (offline GeoIP) and charts
 - [ ] Cloud deployment (Azure for Students) with Cowrie on port 22 and admin SSH on another port
 - [ ] Infrastructure as Code with Terraform
 - [ ] Alerting with Wazuh

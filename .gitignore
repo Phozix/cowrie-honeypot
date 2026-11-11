@@ -9,3 +9,8 @@ tty/
 id_*
 *.pem
 *.key
+
+# GeoIP database (downloaded, licensed separately) and generated charts
+*.mmdb
+*.mmdb.gz
+charts/
