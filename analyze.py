@@ -64,7 +64,9 @@ def analyze(events):
                 stats["login_failed"] += 1
 
         elif eventid == "cowrie.command.input":
-            stats["commands"][event.get("input", "")] += 1
+            command = event.get("input", "").strip()
+            if command:  # ignore empty lines (attacker just pressed Enter)
+                stats["commands"][command] += 1
 
         elif eventid == "cowrie.session.file_download":
             stats["downloads"][event.get("url", "?")] += 1
