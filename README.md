@@ -4,7 +4,7 @@ A medium-interaction SSH honeypot built with [Cowrie](https://github.com/cowrie/
 
 The goal of this project is to **observe real attacker behaviour** (credentials tried, commands typed, malware downloaded) while applying **defence-in-depth** so that the honeypot itself cannot become a foothold.
 
-> Status: lab phase complete (local VM). Next step: deployment to a cloud VM and a Python analysis tool.
+> Status: **live** on an Azure VM (Standard_B1s, Ubuntu 24.04, Belgium Central) since November 2026, collecting real attacks. Lab phase on a local VM completed first.
 
 ---
 
@@ -37,6 +37,18 @@ Attackers who connect to port 2222 land in a **fake shell** that imitates a Debi
 | Host SSH | Key-based auth only, root login disabled | Brute force against the real SSH becomes useless |
 | Host SSH | Config in `sshd_config.d/00-hardening.conf` | sshd keeps the **first** value it reads, so `00-` overrides later files such as `50-cloud-init.conf` |
 | Host firewall | ufw: deny incoming, SSH allowed from admin network only | Minimal attack surface |
+
+### Cloud deployment (Azure)
+
+| Layer | Measure |
+|---|---|
+| Admin SSH | Moved to a non-standard port, key-only, reachable **only from my IP** (NSG rule) |
+| Honeypot | Cowrie published on **port 22**, open to the internet (NSG rule) |
+| Network Security Group | Everything else denied by Azure's default `DenyAllInBound` rule |
+| Port migration | Admin SSH listened on both ports while testing the new one, then port 22 was released, to avoid any lockout |
+| Cost control | Smallest burstable VM (B1s), Standard SSD, monthly budget alerts at 50 / 80 / 100 % |
+
+Unlike ufw, the Azure NSG filters traffic **before** it reaches the VM, so Docker's iptables rules cannot bypass it.
 
 ### Lesson learned: Docker bypasses ufw
 
@@ -146,7 +158,7 @@ IP geolocation by [DB-IP](https://db-ip.com), licensed under CC BY 4.0.
 - [x] Host hardening (SSH keys, ufw)
 - [x] Python analysis tool: top IPs, credentials, commands, downloads
 - [x] Analysis: source countries (offline GeoIP) and charts
-- [ ] Cloud deployment (Azure for Students) with Cowrie on port 22 and admin SSH on another port
+- [x] Cloud deployment (Azure for Students) with Cowrie on port 22 and admin SSH on another port
 - [ ] Infrastructure as Code with Terraform
 - [ ] Alerting with Wazuh
 
