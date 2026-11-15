@@ -77,6 +77,13 @@ sudo docker inspect cowrie --format 'ReadOnly={{.HostConfig.ReadonlyRootfs}} Cap
 ssh -p 2222 root@127.0.0.1
 ```
 
+On an internet-facing server, publish Cowrie on the real SSH port (22) **after** moving the admin SSH to another port:
+
+```bash
+echo "COWRIE_PORT=22" > .env
+sudo docker compose up -d
+```
+
 Logs are stored in the `cowrie-var` volume:
 
 ```bash

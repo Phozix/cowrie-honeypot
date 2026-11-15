@@ -4,7 +4,7 @@ services:
     container_name: cowrie
     restart: unless-stopped
     ports:
-      - "2222:2222"
+      - "${COWRIE_PORT:-2222}:2222"   # host port: 2222 in the lab, 22 on the cloud server (set in .env)
     volumes:
       - cowrie-var:/cowrie/cowrie-git/var   # logs, TTY sessions, attacker downloads
       - cowrie-etc:/cowrie/cowrie-git/etc   # configuration
