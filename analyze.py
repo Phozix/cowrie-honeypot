@@ -4,7 +4,7 @@ analyze.py - Summarise a Cowrie honeypot log (cowrie.json).
 
 Basic report (standard library only, nothing to install):
     sudo python3 analyze.py cowrie.json
-    sudo python3 analyze.py cowrie.json --top 5
+    sudo python3 analyze.py cowrie.json cowrie.json.2026-11-* --top 5
 
 Optional extras:
     --geoip FILE.mmdb   add the country of each attacker IP
@@ -25,19 +25,22 @@ from datetime import datetime
 # 1. Reading the log
 # ---------------------------------------------------------------------------
 
-def load_events(path):
-    """Read cowrie.json: one JSON event per line. Skip broken lines."""
-    events = []
-    with open(path, encoding="utf-8") as f:
-        for line_number, line in enumerate(f, start=1):
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                events.append(json.loads(line))
-            except json.JSONDecodeError:
-                print(f"[!] Line {line_number} is not valid JSON, skipped")
-    return events
+def iter_events(paths):
+    """Yield events one at a time from one or more cowrie.json files.
+
+    Streaming (instead of loading everything into a list) keeps memory use
+    flat, so the script also works on a 1 GB server with large logs.
+    """
+    for path in paths:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for line_number, line in enumerate(f, start=1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    yield json.loads(line)
+                except json.JSONDecodeError:
+                    print(f"[!] {path}:{line_number} is not valid JSON, skipped")
 
 
 # ---------------------------------------------------------------------------
@@ -47,6 +50,7 @@ def load_events(path):
 def analyze(events):
     """Count everything interesting in one pass over the events."""
     stats = {
+        "events": 0,
         "sessions": set(),
         "ips": Counter(),          # connections per source IP
         "usernames": Counter(),
@@ -60,6 +64,7 @@ def analyze(events):
     }
 
     for event in events:
+        stats["events"] += 1
         eventid = event.get("eventid", "")
 
         if "session" in event:
@@ -258,20 +263,19 @@ def print_top(title, counter, top):
 
 def main():
     parser = argparse.ArgumentParser(description="Summarise a Cowrie cowrie.json log")
-    parser.add_argument("logfile", help="path to cowrie.json")
+    parser.add_argument("logfiles", nargs="+", help="one or more cowrie.json files (e.g. cowrie.json*)")
     parser.add_argument("--top", type=int, default=10, help="how many items per list (default: 10)")
     parser.add_argument("--geoip", metavar="MMDB", help="country database (.mmdb) to locate IPs")
     parser.add_argument("--charts", metavar="DIR", help="folder where PNG charts are saved")
     args = parser.parse_args()
 
-    events = load_events(args.logfile)
-    stats = analyze(events)
+    stats = analyze(iter_events(args.logfiles))
     countries = count_countries(stats["ips"], args.geoip) if args.geoip else Counter()
 
     print("=" * 40)
     print(" COWRIE HONEYPOT REPORT")
     print("=" * 40)
-    print(f"  Events read      : {len(events)}")
+    print(f"  Events read      : {stats['events']:,}")
     print(f"  Sessions         : {len(stats['sessions'])}")
     print(f"  Unique IPs       : {len(stats['ips'])}")
     print(f"  Logins succeeded : {stats['login_success']}")

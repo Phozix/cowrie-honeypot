@@ -115,6 +115,8 @@ LOG=/var/lib/docker/volumes/cowrie_cowrie-var/_data/log/cowrie/cowrie.json
 sudo python3 analyze.py $LOG --top 10
 ```
 
+Cowrie rotates its JSON log daily (`cowrie.json.YYYY-MM-DD`): pass several files to analyse more than one day. Events are streamed, so memory stays low even on a 1 GB VM.
+
 It prints sessions, unique IPs, login successes/failures and the top IPs, usernames, passwords, combos, commands and downloaded URLs.
 
 ### Countries and charts (optional)
